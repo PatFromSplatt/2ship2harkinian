@@ -821,8 +821,18 @@ void OTRGlobals::ScaleImGui() {
     ImGui::GetStyle().ScaleAllSizes(scale / previousImGuiScale);
     // Fonts are real TTFs at authored point sizes; only the user's own multiplier applies —
     // divided by the raster scale, since the atlas is rasterized that much larger to stay sharp.
+#if defined(__IOS__) || defined(__ANDROID__)
+    // Text-only trim: authored sizes (20pt body / 24pt headers) land ~18% over the iOS body
+    // standard of 17pt and read oversized on the phone. 0.85 brings body text to exactly 17pt
+    // without touching chrome — the 44pt touch rows self-correct via ScaleTouch, which floors
+    // padding against the EFFECTIVE displayed font size. The user's Menu Scaling option still
+    // multiplies on top.
+    constexpr float kTouchTextScale = 0.85f;
+#else
+    constexpr float kTouchTextScale = 1.0f;
+#endif
     ImGui::GetIO().FontGlobalScale =
-        userScale / Ship::Context::GetInstance()->GetWindow()->GetGui()->GetFontRasterScale();
+        userScale * kTouchTextScale / Ship::Context::GetInstance()->GetWindow()->GetGui()->GetFontRasterScale();
 #if defined(__IOS__) || defined(__ANDROID__)
     sGrabPreFloor = ImGui::GetStyle().GrabMinSize;
     sScrollbarPreFloor = ImGui::GetStyle().ScrollbarSize;
